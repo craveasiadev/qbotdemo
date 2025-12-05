@@ -1,354 +1,65 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>FitLife Gym - Professional Booking System</title>
-    <link rel="stylesheet" href="./styles/main.css">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <title>Barber Kiosk</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="style.css">
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Outfit', 'sans-serif'],
+                    },
+                    colors: {
+                        brand: {
+                            gold: '#D4AF37',
+                            dark: '#FFFFFF', // Main background is now white
+                            gray: '#F3F4F6', // Secondary background
+                            text: '#1F2937', // Main text color
+                            light: '#121212' // Inverted for contrast if needed
+                        }
+                    },
+                    animation: {
+                        'fade-in': 'fadeIn 0.5s ease-out',
+                        'slide-up': 'slideUp 0.5s ease-out',
+                        'slide-left': 'slideLeft 0.3s ease-out',
+                    },
+                    keyframes: {
+                        fadeIn: {
+                            '0%': { opacity: '0' },
+                            '100%': { opacity: '1' },
+                        },
+                        slideUp: {
+                            '0%': { transform: 'translateY(20px)', opacity: '0' },
+                            '100%': { transform: 'translateY(0)', opacity: '1' },
+                        },
+                        slideLeft: {
+                            '0%': { transform: 'translateX(20px)', opacity: '0' },
+                            '100%': { transform: 'translateX(0)', opacity: '1' },
+                        }
+                    }
+                }
+            }
+        }
+    </script>
 </head>
-<body>
-    <div class="app-container">
-        <header class="global-header hidden" id="global-app-header">
-            <div class="header-content">
-                <button class="back-btn global-back-btn" onclick="globalGoBack()">
-                    <span>←</span> Back
-                </button>
-                <div class="logo">
-                    <h1>FitLife Gym</h1>
-                    <span>Booking System</span>
-                </div>
-                </div>
-        </header>
 
-        <main class="main-content">
+<body class="bg-brand-dark text-brand-text font-sans overflow-hidden select-none">
 
-            <div id="hero-section" class="step active">
-                <div class="hero-background"></div>
-                <div class="hero-content">
-                    <h1>Your Journey to Fitness Starts Here</h1>
-                    <p>Book personal training sessions, group classes, and more with ease.</p>
-                    <div class="hero-actions">
-                        <button class="btn primary large" onclick="goToLogin()">Book Class</button>
-                        <button class="btn secondary large" onclick="goToRegister()">
-                            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                                <circle cx="12" cy="12" r="10"></circle>
-                                <circle cx="12" cy="10" r="3"></circle>
-                                <path d="M7 20.662V19.9c0-1.7.3-3.4 1-4.7s2-2.3 3.6-2.9c1.6-.6 3.3-.6 4.9 0s3 1.6 3.6 2.9c.7 1.3 1 3 1 4.7v.762"></path>
-                            </svg>
-                            Register Face ID
-                        </button>
-                    </div>
-                </div>
-            </div>
-
-            <div id="login-page" class="step">
-                <div class="step-header">
-                    <h2>Welcome Back!</h2>
-                    <p>Login to manage your bookings.</p>
-                </div>
-                <form id="login-form" class="booking-form login-form-design">
-                    <div class="form-group required">
-                        <label for="login-email">Email Address</label>
-                        <input type="email" id="login-email" placeholder="your@example.com" required>
-                    </div>
-                    <div class="form-group required">
-                        <label for="login-password">Password</label>
-                        <input type="password" id="login-password" placeholder="********" required>
-                    </div>
-                    <button type="button" class="btn primary large" onclick="performLogin()">Login</button>
-                    <p class="mt-4 text-center">Don't have an account? <a href="#" onclick="goToRegister()">Register here</a></p>
-                </form>
-            </div>
-
-            <div id="register-page" class="step">
-                <div class="step-header">
-                    <h2>Join FitLife Gym Today!</h2>
-                    <p>Create your account and start booking.</p>
-                </div>
-                <form id="register-form" class="booking-form">
-                    <div class="form-group required">
-                        <label for="register-name">Full Name</label>
-                        <input type="text" id="register-name" placeholder="John Doe" required>
-                    </div>
-                    <div class="form-group required">
-                        <label for="register-email">Email Address</label>
-                        <input type="email" id="register-email" placeholder="your@example.com" required>
-                    </div>
-                    <div class="form-group required">
-                        <label for="register-password">Password</label>
-                        <input type="password" id="register-password" placeholder="********" required>
-                    </div>
-                    <div class="form-group required">
-                        <label for="register-confirm-password">Confirm Password</label>
-                        <input type="password" id="register-confirm-password" placeholder="********" required>
-                    </div>
-                    <button type="button" class="btn primary large" onclick="proceedToFaceIdScan()">Register & Scan Face ID</button>
-                    <p class="mt-4 text-center">Already have an account? <a href="#" onclick="goToLogin()">Login here</a></p>
-                </form>
-            </div>
-
-            <div id="face-id-scan-page" class="step">
-                <div class="step-header">
-                    <h2>Scanning Face ID...</h2>
-                    <p>Please look directly at the camera.</p>
-                </div>
-                <div class="face-scan-container">
-                    <div class="face-scan-circle">
-                        <svg class="face-scan-icon" width="80" height="80" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                            <circle cx="12" cy="12" r="10"></circle>
-                            <circle cx="12" cy="10" r="3"></circle>
-                            <path d="M7 20.662V19.9c0-1.7.3-3.4 1-4.7s2-2.3 3.6-2.9c1.6-.6 3.3-.6 4.9 0s3 1.6 3.6 2.9c.7 1.3 1 3 1 4.7v.762"></path>
-                        </svg>
-                        <div class="face-scan-progress"></div>
-                    </div>
-                    <p id="scan-status" class="mt-4">Scanning in progress...</p>
-                </div>
-            </div>
-
-            <div id="face-id-success-page" class="step">
-                <div class="confirmation-content">
-                    <div class="success-icon">✓</div>
-                    <h2>Face ID Successfully Created!</h2>
-                    <p class="mb-4">You can now use Face ID for quicker logins.</p>
-                    <div class="confirmation-actions">
-                        <button class="btn primary large" onclick="goToBookingCalendarStep()">
-                            Proceed to Booking
-                        </button>
-                        <button class="btn secondary" onclick="goToLogin()">
-                            Go to Login Page
-                        </button>
-                    </div>
-                </div>
-            </div>
-            
-            <div id="booking-calendar-step" class="step">
-                <div class="step-header">
-                    <h2>Select Date & Time</h2>
-                    <p id="booking-info">Choose your preferred slot at FitLife Gym.</p>
-                </div>
-                
-                <div class="filters-container">
-                    <h3>Filter Your Options</h3>
-                    <div class="filters">
-                        <div class="filter-group">
-                            <label for="location-filter">Location:</label>
-                            <select id="location-filter" class="filter-select">
-                                <option value="">All Locations</option>
-                            </select>
-                        </div>
-                        <div class="filter-group">
-                            <label for="service-type-filter">Service Category:</label>
-                            <select id="service-type-filter" class="filter-select">
-                                <option value="">All Categories</option>
-                            </select>
-                        </div>
-                        <div class="filter-group">
-                            <label for="service-filter">Service:</label>
-                            <select id="service-filter" class="filter-select">
-                                <option value="">All Services</option>
-                            </select>
-                        </div>
-                        <div class="filter-group">
-                            <label for="staff-filter">Trainer:</label>
-                            <select id="staff-filter" class="filter-select">
-                                <option value="">Any Available Trainer</option>
-                            </select>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="calendar-container">
-                    <div class="calendar-header">
-                        <button class="calendar-nav" id="prev-month">‹</button>
-                        <h3 id="calendar-title">Month Year</h3>
-                        <button class="calendar-nav" id="next-month">›</button>
-                    </div>
-                    <div class="calendar" id="calendar">
-                    </div>
-                </div>
-                
-                <div class="text-center">
-                    <button class="btn primary large" id="proceed-to-time-slot-btn" onclick="goToTimeSlotSelection()" disabled>
-                        Proceed to Time Selection
-                    </button>
-                </div>
-            </div>
-
-            <div id="time-slot-selection-step" class="step">
-                <div class="step-header">
-                    <h2>Select a Time Slot</h2>
-                    <p id="selected-date-display">Selected Date: </p>
-                </div>
-                <div class="filters-container">
-                    <div class="time-slots-grid" id="time-slots-grid">
-                        <div class="time-slot" data-time="09:00">09:00 AM</div>
-                        <div class="time-slot" data-time="09:30">09:30 AM</div>
-                        <div class="time-slot" data-time="10:00">10:00 AM</div>
-                        <div class="time-slot unavailable" data-time="10:30">10:30 AM</div>
-                        <div class="time-slot" data-time="11:00">11:00 AM</div>
-                        <div class="time-slot" data-time="11:30">11:30 AM</div>
-                        <div class="time-slot" data-time="12:00">12:00 PM</div>
-                        <div class="time-slot" data-time="12:30">12:30 PM</div>
-                        <div class="time-slot" data-time="13:00">01:00 PM</div>
-                        <div class="time-slot unavailable" data-time="13:30">01:30 PM</div>
-                        <div class="time-slot" data-time="14:00">02:00 PM</div>
-                        <div class="time-slot" data-time="14:30">02:30 PM</div>
-                        <div class="time-slot" data-time="15:00">03:00 PM</div>
-                        <div class="time-slot" data-time="15:30">03:30 PM</div>
-                        <div class="time-slot" data-time="16:00">04:00 PM</div>
-                        <div class="time-slot" data-time="16:30">04:30 PM</div>
-                        <div class="time-slot" data-time="17:00">05:00 PM</div>
-                    </div>
-                </div>
-                <div class="text-center">
-                    <button class="btn primary large" id="proceed-to-service-selection-btn" onclick="goToServiceSelection()" disabled>
-                        Proceed to Service Selection
-                    </button>
-                </div>
-            </div>
-
-            <div id="service-selection-step" class="step">
-                <div class="step-header">
-                    <h2>Choose Your Service & Trainer</h2>
-                    <p id="selected-datetime-display">Selected Date & Time: </p>
-                </div>
-                
-                <div class="service-trainer-selection-area">
-                    <h3>Services Available</h3>
-                    <div class="selection-grid" id="service-grid">
-                        <div class="selection-card" data-id="service1" data-price="75.00" data-duration="60 min">
-                            <h4>Personal Training</h4>
-                            <p>One-on-one session with a certified trainer.</p>
-                            <div class="service-details">
-                                <span class="service-duration">60 min</span>
-                                <span class="service-price">$75.00</span>
-                            </div>
-                        </div>
-                        <div class="selection-card" data-id="service2" data-price="25.00" data-duration="45 min">
-                            <h4>Group HIIT Class</h4>
-                            <p>High-intensity interval training in a group.</p>
-                            <div class="service-details">
-                                <span class="service-duration">45 min</span>
-                                <span class="service-price">$25.00</span>
-                            </div>
-                        </div>
-                    </div>
-
-                    <h3 class="mt-4">Select Trainer (Optional)</h3>
-                    <div class="selection-grid" id="trainer-grid">
-                        <div class="selection-card staff-card" data-id="trainer-any">
-                            <div class="staff-avatar">AA</div>
-                            <h4>Any Available</h4>
-                            <p>Automatically assign the best fit.</p>
-                        </div>
-                        <div class="selection-card staff-card" data-id="trainer1">
-                            <div class="staff-avatar">SJ</div>
-                            <h4>Sarah Johnson</h4>
-                            <p>Specializes in strength & conditioning.</p>
-                        </div>
-                        <div class="selection-card staff-card" data-id="trainer2">
-                            <div class="staff-avatar">MC</div>
-                            <h4>Mike Chen</h4>
-                            <p>Expert in cardio and functional training.</p>
-                        </div>
-                    </div>
-                    
-                    <div class="total-cost mt-4">
-                        <strong>Total: $<span id="total-cost">0.00</span></strong>
-                    </div>
-                    <div class="text-center">
-                        <button class="btn primary large" id="proceed-to-customer-details-btn" onclick="goToCustomerDetails()" disabled>
-                            Proceed to Customer Details
-                        </button>
-                    </div>
-                </div>
-            </div>
-
-            <div id="customer-details-step" class="step">
-                <div class="step-header">
-                    <h2>Your Details</h2>
-                    <p>Confirm your booking information.</p>
-                </div>
-                
-                <div class="customer-details-area">
-                    <div class="booking-summary-modern">
-                        <h3>Booking Summary</h3>
-                        <div id="booking-summary-preview">
-                            </div>
-                        <div class="total-cost">
-                            <strong>Total: $<span id="final-total-cost">0.00</span></strong>
-                        </div>
-                    </div>
-
-                    <form id="customer-form" class="customer-form-modern">
-                        <h3>Contact Information</h3>
-                        <div class="form-group required">
-                            <label for="customer-name">Full Name</label>
-                            <input type="text" id="customer-name" placeholder="John Doe" required value="testing">
-                        </div>
-                        <div class="form-group required">
-                            <label for="customer-email">Email</label>
-                            <input type="email" id="customer-email" placeholder="john.doe@example.com" required value="testing@demo.com">
-                        </div>
-                        <div class="form-group">
-                            <label for="customer-phone">Phone Number</label>
-                            <input type="tel" id="customer-phone" placeholder="+60 12-3456789">
-                        </div>
-                        <div class="form-group">
-                            <label for="customer-notes">Notes / Special Requests</label>
-                            <textarea id="customer-notes" rows="3" placeholder="Any specific requirements?"></textarea>
-                        </div>
-                    </form>
-                </div>
-
-                <div class="text-center mt-4">
-                    <button class="btn primary large" onclick="submitBooking()">
-                        Confirm Booking
-                    </button>
-                </div>
-            </div>
-
-            <div id="confirmation-step" class="step">
-                <div class="confirmation-content-modern">
-                    <div class="success-icon-modern">
-                        <svg class="checkmark-icon" width="80" height="80" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                            <path d="M22 11.08V12a10 10 0 1 1-5.93-8.98"></path>
-                            <polyline points="22 4 12 14.01 9 11.01"></polyline>
-                        </svg>
-                    </div>
-                    <h2>Booking Confirmed!</h2>
-                    <p class="confirmation-message">Your session has been successfully booked with FitLife Gym.</p>
-                    
-                    <div id="confirmation-details-modern" class="booking-summary-confirmation">
-                        </div>
-
-                    <div class="qr-code-container">
-                        <p class="qr-label">Scan for your e-receipt:</p>
-                        <img src="https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=FitLifeGymBookingID-ABC123XYZ" alt="E-Receipt QR Code" class="e-receipt-qr-code">
-                        <p class="qr-hint">Show this code at the reception.</p>
-                    </div>
-
-                    <p class="cta-message">We look forward to seeing you!</p>
-
-                    <div class="confirmation-actions mt-4">
-                        <button class="btn primary large" onclick="downloadBookingDetails()">
-                            <i class="fas fa-download"></i> Download Details
-                        </button>
-                        <button class="btn secondary large" onclick="startNewBooking()">
-                            <i class="fas fa-plus-circle"></i> Make Another Booking
-                        </button>
-                    </div>
-                </div>
-            </div>
-
-        </main>
+    <!-- Main App Container -->
+    <div id="app" class="h-screen w-screen flex flex-col relative overflow-hidden">
+        <!-- Dynamic Content injected here -->
     </div>
 
-    <script src="./scripts/storage.js"></script>
-    <script src="./scripts/utils.js"></script>
-    <script src="./scripts/calendar.js"></script>
-    <script src="./scripts/booking.js"></script>
-    <script src="./scripts/main.js"></script>
+    <!-- Scripts -->
+    <script src="data.js"></script>
+    <script src="script.js"></script>
 </body>
+
 </html>
