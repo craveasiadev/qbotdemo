@@ -48,3 +48,218 @@ body {
 input:focus {
     outline: none;
 }
+
+/* ======================================
+   BACK BUTTON STYLES
+====================================== */
+
+.back-btn {
+    transition: all 0.25s ease;
+    border: 2px solid transparent;
+}
+
+.back-btn:hover {
+    transform: scale(1.05);
+    border-color: #D4AF37;
+}
+
+.back-btn:active {
+    transform: scale(0.95);
+}
+
+/* ======================================
+   PROGRESS BAR STYLES
+====================================== */
+
+.progress-container {
+    width: 100%;
+    padding: 0.5rem 0;
+}
+
+.progress-bar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    width: 100%;
+}
+
+.progress-step {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.5rem;
+    flex-shrink: 0;
+}
+
+.step-indicator {
+    width: 44px;
+    height: 44px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 600;
+    font-size: 1.1rem;
+    transition: all 0.3s ease;
+    border: 3px solid #e5e7eb;
+    background: white;
+    color: #9ca3af;
+}
+
+.progress-step.complete .step-indicator {
+    background: linear-gradient(135deg, #D4AF37, #c4a030);
+    border-color: #D4AF37;
+    color: white;
+    box-shadow: 0 4px 12px rgba(212, 175, 55, 0.35);
+}
+
+.progress-step.current .step-indicator {
+    border-color: #D4AF37;
+    background: white;
+    color: #D4AF37;
+    box-shadow: 0 0 0 4px rgba(212, 175, 55, 0.15);
+    animation: pulse-gold 2s infinite;
+}
+
+.progress-step.pending .step-indicator {
+    border-color: #e5e7eb;
+    background: #f9fafb;
+    color: #d1d5db;
+}
+
+.step-label {
+    font-size: 0.8rem;
+    font-weight: 600;
+    color: #9ca3af;
+    text-transform: uppercase;
+    letter-spacing: 0.025em;
+    text-align: center;
+    white-space: nowrap;
+}
+
+.progress-step.complete .step-label {
+    color: #D4AF37;
+}
+
+.progress-step.current .step-label {
+    color: #1f2937;
+    font-weight: 700;
+}
+
+.progress-step.pending .step-label {
+    color: #d1d5db;
+}
+
+.step-connector {
+    flex: 1;
+    height: 3px;
+    background: #e5e7eb;
+    margin: 0 0.75rem;
+    margin-bottom: 1.75rem;
+    border-radius: 2px;
+    transition: background 0.3s ease;
+}
+
+.step-connector.complete {
+    background: linear-gradient(90deg, #D4AF37, #c4a030);
+}
+
+@keyframes pulse-gold {
+
+    0%,
+    100% {
+        box-shadow: 0 0 0 4px rgba(212, 175, 55, 0.15);
+    }
+
+    50% {
+        box-shadow: 0 0 0 8px rgba(212, 175, 55, 0.1);
+    }
+}
+
+/* ======================================
+   TIME SLOT STYLES
+====================================== */
+
+.today-date-banner {
+    background: linear-gradient(135deg, rgba(255, 255, 255, 0.9), rgba(212, 175, 55, 0.1));
+    border: 2px solid rgba(212, 175, 55, 0.3);
+}
+
+.time-slot-disabled {
+    background: #f3f4f6;
+    border: 2px dashed #d1d5db;
+    opacity: 0.7;
+}
+
+.time-slot-disabled::after {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 10%;
+    right: 10%;
+    height: 2px;
+    background: #d1d5db;
+    transform: rotate(-5deg);
+}
+
+/* ======================================
+   EMAIL DOMAIN BUTTONS
+====================================== */
+
+.email-domain-btn {
+    transition: all 0.2s ease;
+}
+
+.email-domain-btn:active {
+    transform: scale(0.95);
+}
+
+/* ======================================
+   INPUT FIELD STYLES
+====================================== */
+
+input::placeholder {
+    color: #d1d5db;
+}
+
+input.border-red-400 {
+    border-color: #f87171 !important;
+    animation: shake 0.4s ease-in-out;
+}
+
+@keyframes shake {
+
+    0%,
+    100% {
+        transform: translateX(0);
+    }
+
+    25% {
+        transform: translateX(-5px);
+    }
+
+    75% {
+        transform: translateX(5px);
+    }
+}
+
+/* ======================================
+   HEADER STYLES
+====================================== */
+
+#layout-header {
+    position: relative;
+}
+
+/* Responsive adjustments for kiosk */
+@media (min-height: 800px) {
+    .progress-step .step-indicator {
+        width: 48px;
+        height: 48px;
+        font-size: 1.2rem;
+    }
+
+    .step-label {
+        font-size: 0.85rem;
+    }
+}

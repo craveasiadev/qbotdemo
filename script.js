@@ -9,12 +9,72 @@ const state = {
     time: null,
     details: {
         name: '',
-        contact: ''
+        phone: '',
+        email: ''
     },
-    activeInput: 'name' // 'name' or 'contact'
+    activeInput: 'name' // 'name', 'phone', or 'email'
 };
 
 const app = document.getElementById('app');
+
+// --- LocalStorage for booked times ---
+const STORAGE_KEY = 'barber_kiosk_bookings';
+
+function getBookedTimes() {
+    try {
+        const data = localStorage.getItem(STORAGE_KEY);
+        if (!data) return [];
+        const bookings = JSON.parse(data);
+        // Filter to only today's bookings
+        const today = new Date().toDateString();
+        return bookings.filter(b => new Date(b.date).toDateString() === today).map(b => b.time);
+    } catch (e) {
+        return [];
+    }
+}
+
+function saveBooking(time) {
+    try {
+        const data = localStorage.getItem(STORAGE_KEY);
+        const bookings = data ? JSON.parse(data) : [];
+        bookings.push({
+            time: time,
+            date: new Date().toISOString(),
+            name: state.details.name,
+            phone: state.details.phone
+        });
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(bookings));
+    } catch (e) {
+        console.error('Failed to save booking', e);
+    }
+}
+
+function clearAllBookings() {
+    localStorage.removeItem(STORAGE_KEY);
+}
+
+// --- Step Configuration (Combined Service step) ---
+const stepConfig = [
+    { id: 'service', label: 'Service', icon: 'fa-scissors', steps: ['categories', 'items'] },
+    { id: 'addons', label: 'Add-ons', icon: 'fa-plus', steps: ['addons'] },
+    { id: 'barber', label: 'Barber', icon: 'fa-user', steps: ['barber'] },
+    { id: 'time', label: 'Time', icon: 'fa-clock', steps: ['time'] },
+    { id: 'details', label: 'Details', icon: 'fa-id-card', steps: ['details'] },
+    { id: 'confirmation', label: 'Confirm', icon: 'fa-check', steps: ['confirmation'] }
+];
+
+// --- Date Formatter ---
+const getTodayDate = () => {
+    const today = new Date();
+    const options = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
+    return today.toLocaleDateString('en-US', options);
+};
+
+const getShortDate = () => {
+    const today = new Date();
+    const options = { weekday: 'short', month: 'short', day: 'numeric' };
+    return today.toLocaleDateString('en-US', options);
+};
 
 // --- Formatters ---
 const formatPrice = (price) => `RM ${price}`;
@@ -25,6 +85,38 @@ const formatDuration = (min) => {
     if (h > 0) return `${h}h`;
     return `${m}m`;
 };
+
+// --- Progress Bar Helper ---
+function getStepConfigIndex(step) {
+    return stepConfig.findIndex(s => s.steps.includes(step));
+}
+
+function renderProgressBar() {
+    const currentConfigIndex = getStepConfigIndex(state.step);
+    if (currentConfigIndex < 0) return ''; // Don't show for landing/payment/success
+
+    return `
+        <div class="progress-container">
+            <div class="progress-bar">
+                ${stepConfig.map((stepItem, index) => {
+        const isComplete = index < currentConfigIndex;
+        const isCurrent = index === currentConfigIndex;
+        const isPending = index > currentConfigIndex;
+
+        return `
+                        <div class="progress-step ${isComplete ? 'complete' : ''} ${isCurrent ? 'current' : ''} ${isPending ? 'pending' : ''}">
+                            <div class="step-indicator">
+                                ${isComplete ? '<i class="fa-solid fa-check"></i>' : `<span>${index + 1}</span>`}
+                            </div>
+                            <div class="step-label">${stepItem.label}</div>
+                        </div>
+                        ${index < stepConfig.length - 1 ? `<div class="step-connector ${isComplete ? 'complete' : ''}"></div>` : ''}
+                    `;
+    }).join('')}
+            </div>
+        </div>
+    `;
+}
 
 // --- Render Functions ---
 
@@ -133,63 +225,120 @@ function renderBarber() {
 }
 
 function renderTime() {
+    const bookedTimes = getBookedTimes();
     const slots = ['10:00', '10:30', '11:00', '11:30', '12:00', '13:00', '13:30', '14:00', '14:30', '15:00', '15:30', '16:00'];
-    const slotsHtml = slots.map(time => `
-        <div onclick="selectTime('${time}')" class="glass p-8 rounded-2xl text-center cursor-pointer hover:bg-brand-gold/10 transition-all ${state.time === time ? 'glass-active' : ''} shadow-md flex items-center justify-center">
-            <div class="text-4xl font-bold text-brand-text">${time}</div>
-        </div>
-    `).join('');
 
-    renderLayout('Select Time (Today)', `
-        <div class="grid grid-cols-2 gap-8 p-12 max-w-4xl mx-auto w-full h-full content-center">
-            ${slotsHtml}
+    const slotsHtml = slots.map(time => {
+        const isBooked = bookedTimes.includes(time);
+        const isSelected = state.time === time;
+
+        if (isBooked) {
+            return `
+                <div class="time-slot-disabled p-8 rounded-2xl text-center shadow-md flex flex-col items-center justify-center gap-2 cursor-not-allowed">
+                    <div class="text-4xl font-bold text-gray-300">${time}</div>
+                    <div class="text-sm text-gray-400 uppercase tracking-wide">Booked</div>
+                </div>
+            `;
+        }
+
+        return `
+            <div onclick="selectTime('${time}')" class="glass p-8 rounded-2xl text-center cursor-pointer hover:bg-brand-gold/10 transition-all ${isSelected ? 'glass-active' : ''} shadow-md flex items-center justify-center">
+                <div class="text-4xl font-bold text-brand-text">${time}</div>
+            </div>
+        `;
+    }).join('');
+
+    renderLayout('Select Time', `
+        <div class="flex flex-col gap-6 p-8 max-w-4xl mx-auto w-full h-full overflow-y-auto no-scrollbar">
+            <!-- Today's Date Display -->
+            <div class="today-date-banner glass p-6 rounded-2xl text-center shadow-lg">
+                <div class="flex items-center justify-center gap-3">
+                    <i class="fa-regular fa-calendar text-brand-gold text-3xl"></i>
+                    <div>
+                        <span class="text-brand-gold font-bold text-2xl">(Today)</span>
+                        <span class="text-brand-text text-2xl ml-2">${getTodayDate()}</span>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Time Slots Grid -->
+            <div class="grid grid-cols-3 gap-6 w-full">
+                ${slotsHtml}
+            </div>
+            
+            <!-- Info Text -->
+            <div class="text-center text-gray-400 text-lg mt-2">
+                <i class="fa-solid fa-info-circle mr-2"></i>
+                Grayed out slots are already booked
+            </div>
         </div>
     `);
 }
 
 function renderDetails() {
-    const keys = [
-        '1', '2', '3', '4', '5', '6', '7', '8', '9', '0',
-        'Q', 'W', 'E', 'R', 'T', 'Y', 'U', 'I', 'O', 'P',
-        'A', 'S', 'D', 'F', 'G', 'H', 'J', 'K', 'L', '@',
-        'Z', 'X', 'C', 'V', 'B', 'N', 'M', '.', 'DEL'
-    ];
+    const emailDomains = ['@gmail.com', '@yahoo.com', '@outlook.com', '@icloud.com', '@hotmail.com'];
 
-    const domains = ['@gmail.com', '@yahoo.com', '@outlook.com', '@icloud.com'];
-
-    const keyboardHtml = keys.map(k => {
-        if (k === 'DEL') return `<button onclick="handleKey('DEL')" class="col-span-2 bg-red-100 text-red-600 shadow-md rounded-xl p-4 text-2xl font-bold hover:bg-red-200 active:bg-red-500 active:text-white transition-colors"><i class="fa-solid fa-delete-left"></i></button>`;
-        return `<button onclick="handleKey('${k}')" class="bg-white shadow-md rounded-xl p-4 text-2xl font-bold hover:bg-gray-100 active:bg-brand-gold active:text-white transition-colors">${k}</button>`;
-    }).join('');
-
-    const domainsHtml = domains.map(d => `
-        <button onclick="handleKey('${d}')" class="col-span-2 bg-blue-50 text-blue-600 shadow-sm rounded-xl p-3 text-lg font-bold hover:bg-blue-100 active:bg-blue-500 active:text-white transition-colors truncate">${d}</button>
+    const emailDomainsHtml = emailDomains.map(d => `
+        <button onclick="appendEmailDomain('${d}')" class="email-domain-btn bg-gradient-to-r from-gray-50 to-gray-100 text-gray-700 shadow-sm rounded-xl px-4 py-3 text-lg font-medium hover:from-brand-gold/10 hover:to-brand-gold/20 hover:text-brand-gold active:bg-brand-gold active:text-white transition-all border border-gray-200 hover:border-brand-gold/30">${d}</button>
     `).join('');
 
     renderLayout('Your Details', `
-        <div class="flex flex-col justify-center h-full w-full p-8 gap-8 max-w-5xl mx-auto">
-            <div class="grid grid-cols-2 gap-8">
-                <div onclick="setActiveInput('name')" class="glass p-6 rounded-2xl cursor-pointer ${state.activeInput === 'name' ? 'border-2 border-brand-gold bg-white' : ''}">
-                    <label class="block text-xl text-gray-500 mb-2">Full Name</label>
-                    <div class="text-4xl font-bold h-12 overflow-hidden text-brand-text whitespace-nowrap">${state.details.name || '<span class="text-gray-300">Tap to enter</span>'}</div>
+        <div class="flex flex-col justify-start h-full w-full p-8 gap-6 max-w-4xl mx-auto overflow-y-auto no-scrollbar">
+            <!-- Form Fields -->
+            <div class="flex flex-col gap-5">
+                <!-- Full Name Field -->
+                <div class="glass p-6 rounded-2xl shadow-sm">
+                    <label class="block text-lg text-gray-500 mb-2 font-medium">Full Name <span class="text-red-400">*</span></label>
+                    <input 
+                        type="text" 
+                        id="input-name"
+                        value="${state.details.name}"
+                        oninput="updateDetail('name', this.value)"
+                        onfocus="setActiveInput('name')"
+                        placeholder="Enter your full name"
+                        class="w-full text-3xl font-semibold bg-transparent border-b-2 border-gray-200 focus:border-brand-gold pb-2 transition-colors text-brand-text placeholder:text-gray-300"
+                    >
                 </div>
-                <div onclick="setActiveInput('contact')" class="glass p-6 rounded-2xl cursor-pointer ${state.activeInput === 'contact' ? 'border-2 border-brand-gold bg-white' : ''}">
-                    <label class="block text-xl text-gray-500 mb-2">Phone / Email</label>
-                    <div class="text-4xl font-bold h-12 overflow-hidden text-brand-text whitespace-nowrap">${state.details.contact || '<span class="text-gray-300">Tap to enter</span>'}</div>
+
+                <!-- Phone Field -->
+                <div class="glass p-6 rounded-2xl shadow-sm">
+                    <label class="block text-lg text-gray-500 mb-2 font-medium">Phone Number <span class="text-red-400">*</span></label>
+                    <input 
+                        type="tel" 
+                        id="input-phone"
+                        value="${state.details.phone}"
+                        oninput="updateDetail('phone', this.value)"
+                        onfocus="setActiveInput('phone')"
+                        placeholder="Enter your phone number"
+                        class="w-full text-3xl font-semibold bg-transparent border-b-2 border-gray-200 focus:border-brand-gold pb-2 transition-colors text-brand-text placeholder:text-gray-300"
+                    >
+                </div>
+
+                <!-- Email Field -->
+                <div class="glass p-6 rounded-2xl shadow-sm">
+                    <label class="block text-lg text-gray-500 mb-2 font-medium">Email <span class="text-gray-400 font-normal">(Optional)</span></label>
+                    <input 
+                        type="email" 
+                        id="input-email"
+                        value="${state.details.email}"
+                        oninput="updateDetail('email', this.value)"
+                        onfocus="setActiveInput('email')"
+                        placeholder="Enter your email address"
+                        class="w-full text-3xl font-semibold bg-transparent border-b-2 border-gray-200 focus:border-brand-gold pb-2 transition-colors text-brand-text placeholder:text-gray-300"
+                    >
+                    
+                    <!-- Quick Email Domains -->
+                    <div class="mt-4">
+                        <p class="text-sm text-gray-400 mb-3">Quick add domain:</p>
+                        <div class="flex flex-wrap gap-2">
+                            ${emailDomainsHtml}
+                        </div>
+                    </div>
                 </div>
             </div>
             
-            <div class="bg-gray-100 rounded-3xl p-6 flex flex-col gap-3 shadow-inner">
-                <div class="grid grid-cols-10 gap-3">
-                    ${keyboardHtml}
-                </div>
-                <div class="grid grid-cols-10 gap-3 mt-2">
-                    <button onclick="handleKey(' ')" class="col-span-2 bg-white shadow-md rounded-xl p-4 text-2xl font-bold hover:bg-gray-100 active:bg-brand-gold active:text-white transition-colors">SPACE</button>
-                    ${domainsHtml}
-                </div>
-            </div>
-            
-            <button onclick="submitDetails()" class="bg-brand-gold text-white w-full py-6 rounded-2xl font-bold text-3xl hover:bg-brand-text transition-all shadow-lg">
+            <!-- Submit Button -->
+            <button onclick="submitDetails()" class="bg-brand-gold text-white w-full py-6 rounded-2xl font-bold text-3xl hover:bg-brand-text transition-all shadow-lg mt-auto">
                 Review Order
             </button>
         </div>
@@ -202,8 +351,14 @@ function renderConfirmation() {
     const total = main.price + addons.reduce((sum, a) => sum + a.price, 0);
     const duration = main.duration + addons.reduce((sum, a) => sum + a.duration, 0);
 
+    // Build contact info display
+    let contactInfo = state.details.phone;
+    if (state.details.email) {
+        contactInfo += ` · ${state.details.email}`;
+    }
+
     renderLayout('Confirm Order', `
-        <div class="flex flex-col gap-8 p-8 h-full w-full max-w-5xl mx-auto justify-center">
+        <div class="flex flex-col gap-8 p-8 h-full w-full max-w-5xl mx-auto justify-center overflow-y-auto no-scrollbar">
             <div class="glass p-10 rounded-3xl flex flex-col gap-6 shadow-lg">
                 <h3 class="text-gray-500 uppercase tracking-widest text-xl font-bold">Service Summary</h3>
                 <div class="flex justify-between items-start">
@@ -238,7 +393,7 @@ function renderConfirmation() {
                 <div class="glass p-8 rounded-2xl col-span-2 shadow-md">
                     <div class="text-gray-500 text-xl">Customer</div>
                     <div class="font-bold text-4xl text-brand-text">${state.details.name}</div>
-                    <div class="text-2xl text-gray-600 mt-1">${state.details.contact}</div>
+                    <div class="text-2xl text-gray-600 mt-1">${contactInfo}</div>
                 </div>
             </div>
 
@@ -270,10 +425,13 @@ function renderPayment() {
                 </div>
             </button>
         </div>
-    `);
+    `, false, true);
 }
 
 function renderSuccess() {
+    // Save the booking to localStorage
+    saveBooking(state.time);
+
     // Success page is also a full screen replace usually, but we can keep the header if we want.
     // Let's make it full screen for impact
     app.innerHTML = `
@@ -295,7 +453,8 @@ function renderSuccess() {
 }
 
 // --- Layout Helper ---
-function renderLayout(title, content, isHome = false) {
+function renderLayout(title, content, isHome = false, hideProgress = false) {
+    const showProgress = !hideProgress && getStepConfigIndex(state.step) >= 0;
     const existingHeader = document.getElementById('layout-header');
     const existingMain = document.getElementById('layout-main');
 
@@ -303,6 +462,7 @@ function renderLayout(title, content, isHome = false) {
         // Update existing shell
         const titleEl = document.getElementById('header-title');
         const backContainer = document.getElementById('header-back');
+        const progressContainer = document.getElementById('progress-wrapper');
 
         if (titleEl.innerText !== title) {
             titleEl.innerText = title;
@@ -310,8 +470,12 @@ function renderLayout(title, content, isHome = false) {
 
         if (isHome) {
             backContainer.innerHTML = '';
-        } else if (backContainer.innerHTML === '') {
-            backContainer.innerHTML = `<button onclick="goBack()" class="w-14 h-14 rounded-full bg-gray-100 flex items-center justify-center hover:bg-gray-200 transition-all text-brand-text text-xl"><i class="fa-solid fa-chevron-left"></i></button>`;
+        } else {
+            backContainer.innerHTML = `<button onclick="goBack()" class="back-btn w-16 h-16 rounded-full bg-gray-100 flex items-center justify-center hover:bg-brand-gold hover:text-white transition-all text-brand-text text-2xl shadow-md"><i class="fa-solid fa-arrow-left"></i></button>`;
+        }
+
+        if (progressContainer) {
+            progressContainer.innerHTML = showProgress ? renderProgressBar() : '';
         }
 
         existingMain.innerHTML = content;
@@ -326,14 +490,21 @@ function renderLayout(title, content, isHome = false) {
     } else {
         // Create new shell
         app.innerHTML = `
-            <header id="layout-header" class="h-24 px-8 flex items-center justify-between border-b border-gray-200 bg-white z-10 shadow-sm">
-                <div class="flex items-center gap-6">
-                    <div id="header-back" class="w-14 h-14 flex items-center justify-center">
-                        ${!isHome ? `<button onclick="goBack()" class="w-14 h-14 rounded-full bg-gray-100 flex items-center justify-center hover:bg-gray-200 transition-all text-brand-text text-xl"><i class="fa-solid fa-chevron-left"></i></button>` : ''}
+            <header id="layout-header" class="flex flex-col border-b border-gray-200 bg-white z-10 shadow-sm">
+                <!-- Top Row: Back, Title, Cancel -->
+                <div class="h-28 px-8 flex items-center justify-between">
+                    <div class="flex items-center gap-6">
+                        <div id="header-back" class="flex items-center justify-center">
+                            ${!isHome ? `<button onclick="goBack()" class="back-btn w-16 h-16 rounded-full bg-gray-100 flex items-center justify-center hover:bg-brand-gold hover:text-white transition-all text-brand-text text-2xl shadow-md"><i class="fa-solid fa-arrow-left"></i></button>` : ''}
+                        </div>
+                        <h2 id="header-title" class="text-4xl font-bold tracking-wide text-brand-text">${title}</h2>
                     </div>
-                    <h2 id="header-title" class="text-4xl font-bold tracking-wide text-brand-text">${title}</h2>
+                    <button onclick="resetApp()" class="text-lg text-gray-400 hover:text-red-500 uppercase tracking-widest font-bold px-6 py-3 rounded-xl hover:bg-red-50 transition-all">Cancel</button>
                 </div>
-                <button onclick="resetApp()" class="text-lg text-gray-400 hover:text-red-500 uppercase tracking-widest font-bold">Cancel</button>
+                <!-- Progress Bar -->
+                <div id="progress-wrapper" class="px-8 pb-4">
+                    ${showProgress ? renderProgressBar() : ''}
+                </div>
             </header>
             <main id="layout-main" class="flex-1 relative overflow-hidden flex flex-col animate-slide-up bg-brand-gray">
                 ${content}
@@ -386,22 +557,42 @@ function selectTime(time) {
 
 function setActiveInput(input) {
     state.activeInput = input;
-    render();
+    // Don't re-render, just update focus state
 }
 
-function handleKey(key) {
-    let currentVal = state.details[state.activeInput];
-    if (key === 'DEL') {
-        state.details[state.activeInput] = currentVal.slice(0, -1);
-    } else {
-        state.details[state.activeInput] = currentVal + key;
+function updateDetail(field, value) {
+    state.details[field] = value;
+    // Don't re-render to prevent input losing focus
+}
+
+function appendEmailDomain(domain) {
+    const emailInput = document.getElementById('input-email');
+    // Remove any existing domain first
+    let currentEmail = state.details.email;
+    const atIndex = currentEmail.indexOf('@');
+    if (atIndex > 0) {
+        currentEmail = currentEmail.substring(0, atIndex);
     }
-    render();
+    state.details.email = currentEmail + domain;
+    if (emailInput) {
+        emailInput.value = state.details.email;
+    }
 }
 
 function submitDetails() {
-    if (!state.details.name || !state.details.contact) {
-        // Optional: show error visually
+    if (!state.details.name || !state.details.phone) {
+        // Show validation feedback
+        const nameInput = document.getElementById('input-name');
+        const phoneInput = document.getElementById('input-phone');
+
+        if (!state.details.name && nameInput) {
+            nameInput.classList.add('border-red-400');
+            nameInput.placeholder = 'Name is required';
+        }
+        if (!state.details.phone && phoneInput) {
+            phoneInput.classList.add('border-red-400');
+            phoneInput.placeholder = 'Phone is required';
+        }
         return;
     }
     setStep('confirmation');
@@ -434,7 +625,7 @@ function resetApp() {
     state.cart = { main: null, addons: [] };
     state.barber = null;
     state.time = null;
-    state.details = { name: '', contact: '' };
+    state.details = { name: '', phone: '', email: '' };
     state.activeInput = 'name';
     render();
 }
